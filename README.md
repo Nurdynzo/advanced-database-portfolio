@@ -2,7 +2,7 @@
 
 **Master of Information Technology · MIVA Open University · 2026/2027 First Semester Continuous Assessment**
 
-**Student:** [Your full name] · **Matriculation number:** [Your matric number]
+**Student:** Popoola Nurudeen · **Student ID:** 301924753
 
 This repository is my practical portfolio for MIT 8103 Advanced Database Systems. All five activities use one case study, **Lodgely**, and each folder contains the scripts, a README explaining what was built and how it was tested, and an `evidence/` folder with my screenshots and outputs. The 2–3 page summary submitted on the LMS is in `final-documentation/`.
 
