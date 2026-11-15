@@ -1,0 +1,127 @@
+erDiagram
+    ORGANISATION ||--o{ ORGANISATION_MEMBER : has
+    APP_USER     ||--o{ ORGANISATION_MEMBER : "belongs via"
+    ORGANISATION ||--o{ BUILDING : owns
+    BUILDING     ||--o{ UNIT_CATEGORY : defines
+    BUILDING     ||--o{ UNIT : contains
+    UNIT_CATEGORY ||--o{ UNIT : classifies
+    BUILDING     ||--o{ FACILITY_ASSIGNMENT : "staffed by"
+    APP_USER     ||--o{ FACILITY_ASSIGNMENT : holds
+    UNIT         ||--o{ TENANCY : "leased through"
+    APP_USER     ||--o{ TENANCY : "rents as tenant"
+    TENANCY      ||--o{ BILLING_CYCLE : "billed in"
+    TENANCY      ||--o{ PAYMENT : "paid by"
+    PAYMENT      ||--o{ PAYMENT_ALLOCATION : "split into"
+    BILLING_CYCLE ||--o{ PAYMENT_ALLOCATION : "settled by"
+    BUILDING     ||--o{ PAYOUT_REQUEST : "withdraws via"
+    APP_USER     ||--o{ PAYOUT_REQUEST : requests
+    BUILDING     ||--o{ BUDGET : plans
+    BUDGET       ||--|{ BUDGET_LINE : "itemised as"
+    BUILDING     ||--o{ REQUISITION : raises
+    BUDGET_LINE  |o--o{ REQUISITION : "charged to"
+    APP_USER     ||--o{ REQUISITION : "raised by"
+    REQUISITION  ||--|{ REQUISITION_ITEM : lists
+
+    ORGANISATION {
+        bigint organisation_id PK
+        varchar name
+        varchar handle UK
+    }
+    APP_USER {
+        bigint user_id PK
+        varchar email UK "case-insensitive"
+        varchar full_name
+        timestamptz deleted_at "soft delete"
+    }
+    ORGANISATION_MEMBER {
+        bigint organisation_id PK,FK
+        bigint user_id PK,FK
+        varchar org_role
+    }
+    BUILDING {
+        bigint building_id PK
+        bigint organisation_id FK
+        varchar name "UK with org"
+        varchar city
+    }
+    UNIT_CATEGORY {
+        bigint category_id PK
+        bigint building_id FK
+        varchar name "UK with building"
+        smallint bedrooms
+    }
+    UNIT {
+        bigint unit_id PK
+        bigint building_id FK
+        bigint category_id FK "same building"
+        varchar label "UK with building"
+    }
+    FACILITY_ASSIGNMENT {
+        bigint assignment_id PK
+        bigint building_id FK
+        bigint user_id FK
+        varchar role "one active FM per building"
+        varchar status
+    }
+    TENANCY {
+        bigint tenancy_id PK
+        bigint unit_id FK
+        bigint tenant_user_id FK
+        daterange lease_period "no overlap per unit"
+        numeric rent_amount
+        varchar rent_cycle
+        varchar status
+    }
+    BILLING_CYCLE {
+        bigint cycle_id PK
+        bigint tenancy_id FK
+        varchar charge_type
+        daterange period "no overlap per tenancy+type"
+        numeric amount_due
+    }
+    PAYMENT {
+        bigint payment_id PK
+        bigint tenancy_id FK
+        varchar payment_reference UK
+        numeric amount
+        varchar status
+        timestamptz confirmed_at
+    }
+    PAYMENT_ALLOCATION {
+        bigint payment_id PK,FK
+        bigint cycle_id PK,FK
+        bigint tenancy_id FK "same tenancy"
+        numeric amount
+    }
+    PAYOUT_REQUEST {
+        bigint payout_id PK
+        bigint building_id FK
+        bigint requested_by FK
+        varchar reference UK
+        numeric amount
+        numeric platform_fee
+    }
+    BUDGET {
+        bigint budget_id PK
+        bigint building_id FK
+        smallint fiscal_year "UK with building"
+    }
+    BUDGET_LINE {
+        bigint budget_line_id PK
+        bigint budget_id FK
+        varchar item_name
+        numeric expected_amount
+    }
+    REQUISITION {
+        bigint requisition_id PK
+        bigint building_id FK
+        bigint budget_line_id FK "nullable, same building"
+        bigint raised_by FK
+        varchar status
+    }
+    REQUISITION_ITEM {
+        bigint requisition_id PK,FK
+        smallint line_no PK
+        numeric quantity
+        numeric unit_price
+    }

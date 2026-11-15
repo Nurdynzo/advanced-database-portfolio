@@ -1,0 +1,54 @@
+# Portfolio 5: a 3-member MongoDB replica set.
+#   docker compose up -d        (stop Portfolio 4's single-node setup first)
+# Each member listens on its own port so the same host names work inside the
+# Docker network and from your machine. Add this line to your hosts file
+# (Linux/macOS: /etc/hosts, Windows: C:\Windows\System32\drivers\etc\hosts):
+#   127.0.0.1 mongo1 mongo2 mongo3
+services:
+  mongo1:
+    image: mongo:8.0
+    container_name: mongo1
+    hostname: mongo1
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    ports: ["27017:27017"]
+    volumes: ["mongo1-data:/data/db"]
+
+  mongo2:
+    image: mongo:8.0
+    container_name: mongo2
+    hostname: mongo2
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27018"]
+    ports: ["27018:27018"]
+    volumes: ["mongo2-data:/data/db"]
+
+  mongo3:
+    image: mongo:8.0
+    container_name: mongo3
+    hostname: mongo3
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27019"]
+    ports: ["27019:27019"]
+    volumes: ["mongo3-data:/data/db"]
+
+  # One-off job: waits for mongo1, then initiates the replica set (only once).
+  mongo-init:
+    image: mongo:8.0
+    depends_on: [mongo1, mongo2, mongo3]
+    restart: "no"
+    entrypoint: ["bash", "-c"]
+    command:
+      - |
+        until mongosh --host mongo1:27017 --quiet --eval 'db.runCommand({ping: 1}).ok'; do sleep 1; done
+        mongosh --host mongo1:27017 --quiet --eval '
+          try { rs.status(); print("replica set already initiated"); }
+          catch (e) {
+            rs.initiate({ _id: "rs0", members: [
+              { _id: 0, host: "mongo1:27017" },
+              { _id: 1, host: "mongo2:27018" },
+              { _id: 2, host: "mongo3:27019" } ] });
+            print("replica set initiated");
+          }'
+
+volumes:
+  mongo1-data:
+  mongo2-data:
+  mongo3-data:
